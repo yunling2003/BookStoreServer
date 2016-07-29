@@ -1,4 +1,5 @@
 var express = require('express');
+var bodyParser = require('body-parser');
 var app = express();
 
 var books = [
@@ -17,9 +18,12 @@ var books = [
       {"Id":13, "Name":"Think wide", "Description":"Don't angry about tiny thing", "Price":40, "src":"images/13.jpg"}
 ]
 
+app.use(bodyParser.urlencoded({ extended: false}));
+app.use(bodyParser.json());
+
 app.all('*', function(req, res, next){
 	res.header("Access-Control-Allow-Origin", "*");	
-	res.header("Access-Control-Allow-Headers", "Cache-Control");
+	res.header("Access-Control-Allow-Headers", "Cache-Control,Content-Type");
 	res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
 	next();
 });
@@ -28,11 +32,10 @@ app.get('/books', function(req, res){
 	res.send(books);
 });
 
-app.get('/books/:id', function(req, res){
-	for(var book in books){
-		if(req.params.id === books[book].Id){
-			res.send(books[book]);
-			return;
+app.get('/books/:id', function(req, res){	
+	for(var i in books){		
+		if(parseInt(req.params.id) === books[i].Id){			
+			res.send(books[i]);			
 		}
 	}
 	res.send();
@@ -40,23 +43,31 @@ app.get('/books/:id', function(req, res){
 
 app.post('/books', function(req, res){
 	var book = req.body;
-	console.log('Adding book: ' + JSON.stringify(book));
-	books.push(book);
-	res.send(books);
+	if(!book.Id){
+		book.Id = books[books.length - 1].Id + 1;
+		books.push(book);
+		res.send(book);
+	}else{
+		for(var i in books){
+			if(parseInt(book.Id) === books[i].Id){
+				books[i] = book;
+				res.send(book);
+			}
+		}
+	}		
+	res.send();
 });
 
-app.put('/books/:id', function(req, res){
-	var id = req.params.id;
-	var updatedBook = req.body;
-	console.log('Updating book: ' + id);
-	console.log(JSON.stringify(book));
-	for(var book in books){
-		if(id === books[book].Id){
-			books[book] = updatedBook;
+app.put('/books/:id', function(req, res){	
+	var updatedBook = req.body;	
+	console.log(JSON.stringify(updatedBook));
+	for(var i in books){
+		if(parseInt(req.params.id) === books[i].Id){
+			books[i] = updatedBook;
 			break;
 		}
 	}
-	res.send(books);
+	res.send(updatedBook);
 })
 
 app.delete('/books/:id', function(req, res){
